@@ -1,0 +1,5 @@
+.env
+__pycache__
+test.db
+symbl.conf
+.DS_Store
