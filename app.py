@@ -139,7 +139,7 @@ def analyze():
     if episode:
         print(episode)
         conversation = symbl.Conversations.get_topics(conversation_id=episode.conversation_id, parameters={"sentiment": True})
-        return render_template_string(templ, topics=conversation.topics)
+        return render_template_string(templ, topics=conversation.topics, conversation_id=episode.conversation_id)
     r = requests.get(url)
     r_url = r.url
     print(r_url)
@@ -152,13 +152,19 @@ def analyze():
     topics = save_conversation(conversation_object, episode_id, url)
 
     print(conversation_object.get_topics())
-    return render_template_string(templ, topics=topics)
+    cid=conversation_object.get_conversation_id()
+    return render_template_string(templ, topics=topics, conversation_id=cid)
 
 @app.route('/analysis', methods=['GET'])
 def analysis():
-    conversation_id = request.GET.get('cid')
+    conversation_id = request.args.get('cid')
+    topics = symbl.Conversations.get_topics(conversation_id=conversation_id, parameters={"sentiment": True})
+    follow_ups = symbl.Conversations.get_follow_ups(conversation_id=conversation_id)
+    questions = symbl.Conversations.get_questions(conversation_id=conversation_id)
+    action_items = symbl.Conversations.get_action_items(conversation_id=conversation_id)
+    return render_template("analysis.html", topics=topics.topics, follow_ups=follow_ups.follow_ups, questions=questions.questions, action_items=action_items.action_items)
 
 
-# if __name__ == "__main__":
-    # db.create_all()
-    # app.run(debug=True)
+if __name__ == "__main__":
+    db.create_all()
+    app.run(debug=True)

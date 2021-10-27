@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+	    <meta charset="UTF-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <title>Podcon</title>
+	    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+	    <script src="https://unpkg.com/htmx.org@1.1.0" integrity="sha384-JVb/MVb+DiMDoxpTmoXWmMYSpQD2Z/1yiruL8+vC6Ri9lk6ORGiQqKSqfmCBbpbX" crossorigin="anonymous"></script>
+	<style type="text/css" media="screen">
+	      body {
+		display: flex;
+		min-height: 100vh;
+		flex-direction: column;
+	      }
+	 
+	      #wrapper {
+		flex: 1;
+	      }
+	</style>
+	</head>
+	<body>
+		<nav class="navbar" role="navigation" aria-label="main navigation">
+			<div class="navbar-brand">
+				<a class="navbar-item" href="/">
+					<img src="{{ url_for('static', filename='podcast.png') }}">
+					Podcon
+				</a>
+			</div>
+		</nav>
+		<div id="wrapper">
+		{% for message in get_flashed_messages() %}
+		    <div class="flash">{{ message }}</div>
+		{% endfor %}
+		{% block content %}{% endblock %}
+		</div>
+		<footer class="footer">
+		  <div class="content has-text-centered">
+		    <p>
+		      <strong>Podcon</strong> by <a href="https://kachamukabe.com">Kacha Mukabe</a>. The source code is licensed
+		      <a href="http://opensource.org/licenses/mit-license.php">MIT</a>. The website content
+		      is licensed <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA 4.0</a>.
+		    </p>
+		  </div>
+		</footer>
+	</body>
+</html>

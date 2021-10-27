@@ -1,0 +1,83 @@
+{% extends 'layout.html' %}
+{% block content %}
+<section class="section">
+	<div class="container is-max-desktop">
+		<div class="columns">
+			<div class="column is-half">
+				<article class="message is-info">
+					<div class="message-header">
+						<p>Topics</p>
+						<button class="delete" aria-label="delete"></button>
+					</div>
+					<div class="message-body">
+						{% for topic in topics %}
+						<span class="tag is-primary is-large">{{ topic.text }}</span>
+						{% else %}
+						<p>No topics</p>
+						{% endfor %}
+					</div>
+				</article>
+				<div id="search-results">
+					<progress id="indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+				</div>
+			</div>
+			<div class="column is-half">
+				<article class="message is-info">
+					<div class="message-header">
+						<p>Follow ups</p>
+						<button class="delete" aria-label="delete"></button>
+					</div>
+					<div class="message-body">
+						{% for follow in follow_ups %}
+						<p>{{ follow.text }}</p>
+						{% else %}
+						<p>No follow ups</p>
+						{% endfor %}
+					</div>
+				</article>
+				<div id="episodes-div">
+					<progress id="search-indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+				</div>
+			</div>
+		</div>
+		<div class="columns">
+			<div class="column is-half">
+				<article class="message is-info">
+					<div class="message-header">
+						<p>Action Items</p>
+						<button class="delete" aria-label="delete"></button>
+					</div>
+					<div class="message-body">
+						{% for item in action_items %}
+						<p>{{item}}</p>
+						{% else %}
+						<p>No action items</p>
+						{% endfor %}
+					</div>
+				</article>
+				<div id="episodes-div">
+					<progress id="search-indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+				</div>
+			</div>
+			<div class="column is-half">
+				<article class="message is-info">
+					<div class="message-header">
+						<p>Questions</p>
+						<button class="delete" aria-label="delete"></button>
+					</div>
+					<div class="message-body">
+						{% for question in questions %}
+						<p>{{ question }}</p>
+						{% else %}
+						<p>No questions</p>
+						{% endfor %}
+					</div>
+				</article>
+				<div id="episodes-div">
+					<progress id="search-indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+{% endblock %}
