@@ -52,7 +52,6 @@ def search():
     query = request.args.get('search')
     index = podcastindex.init(config)
     result = index.search(query)
-    print(result['feeds'])
     templ = """
     {% for pod in podcasts %}
     <div class="card block">
@@ -80,11 +79,9 @@ def search():
     """
     podcasts = result['feeds']
     return render_template_string(templ, podcasts=podcasts)
-    # return jsonify(result['feeds']), 200
 
 @app.route('/episodes/<id>')
 def episodes(id):
-    print(id)
     index = podcastindex.init(config)
     result = index.episodesByFeedId(id)
     pprint.pprint(result['items'][0])
@@ -118,14 +115,11 @@ def analyze():
     <div class="card block">
         <header class="card-header">
             <p class="card-header-title">
-              Podcast analysis
+              Podcast analysis complete
             </p>
         </header>
         <div class="card-content">
             <div class="content">
-            {% for topic in topics %}
-            <span class="tag">{{ topic.text }}</span>
-            {% endfor %}
             </div>
         </div>
         <footer class="card-footer">
@@ -137,23 +131,20 @@ def analyze():
     episode_id = request.form['episode_id']
     episode = read_db(episode_id)
     if episode:
-        print(episode)
         conversation = symbl.Conversations.get_topics(conversation_id=episode.conversation_id, parameters={"sentiment": True})
         return render_template_string(templ, topics=conversation.topics, conversation_id=episode.conversation_id)
     r = requests.get(url)
     r_url = r.url
-    print(r_url)
     request_body = {
             'url': r_url.strip(),
             'name': f'Request',
     }
 
     conversation_object = symbl.Audio.process_url(payload=request_body)
-    topics = save_conversation(conversation_object, episode_id, url)
+    save_conversation(conversation_object, episode_id, url)
 
-    print(conversation_object.get_topics())
     cid=conversation_object.get_conversation_id()
-    return render_template_string(templ, topics=topics, conversation_id=cid)
+    return render_template_string(templ, conversation_id=cid)
 
 @app.route('/analysis', methods=['GET'])
 def analysis():
@@ -165,6 +156,6 @@ def analysis():
     return render_template("analysis.html", topics=topics.topics, follow_ups=follow_ups.follow_ups, questions=questions.questions, action_items=action_items.action_items)
 
 
-if __name__ == "__main__":
-    db.create_all()
-    app.run(debug=True)
+# if __name__ == "__main__":
+    # db.create_all()
+    # app.run(debug=True)
