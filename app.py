@@ -1,17 +1,25 @@
 from flask import abort, Flask, jsonify, request, render_template, render_template_string
 from flask_sqlalchemy import SQLAlchemy
 from os import environ
+from rev_ai import apiclient
+from dotenv import load_dotenv
 
 import symbl
 import podcastindex
 import pprint
 import requests
 
+load_dotenv()
+
+access_token = environ.get("REV_ACCESS_TOKEN")
 
 config = {
         "api_key": environ.get("API_KEY"),
         "api_secret": environ.get("API_SECRET") 
 }
+print(environ.get("API_KEY"), environ.get("REV_ACCESS_TOKEN"))
+
+client = apiclient.RevAiAPIClient(access_token)
 
 
 app = Flask(__name__)
@@ -155,7 +163,13 @@ def analysis():
     action_items = symbl.Conversations.get_action_items(conversation_id=conversation_id)
     return render_template("analysis.html", topics=topics.topics, follow_ups=follow_ups.follow_ups, questions=questions.questions, action_items=action_items.action_items)
 
+def transcribe():
+    url = request.form['url']
+    url_job = client.submit_job_url(media_url=url)
+    print(url_job)
 
-# if __name__ == "__main__":
-    # db.create_all()
-    # app.run(debug=True)
+
+
+if __name__ == "__main__":
+    db.create_all()
+    app.run(debug=True)
