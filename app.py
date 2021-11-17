@@ -17,7 +17,6 @@ config = {
         "api_key": environ.get("API_KEY"),
         "api_secret": environ.get("API_SECRET") 
 }
-print(environ.get("API_KEY"), environ.get("REV_ACCESS_TOKEN"))
 
 client = apiclient.RevAiAPIClient(access_token)
 
@@ -31,11 +30,11 @@ class Podcast(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     episode_id = db.Column(db.Integer)
     conversation_id = db.Column(db.String(40))
+    rev_job_id = db.Column(db.String(40))
     episode_url = db.Column(db.String(120))
 
-    def __init__(self, episode_id, conversation_id, episode_url):
+    def __init__(self, episode_id, episode_url):
         self.episode_id = episode_id
-        self.conversation_id = conversation_id
         self.episode_url = episode_url
 
     def __repr__(self):
@@ -45,8 +44,13 @@ def read_db(episode_id):
     episode = Podcast.query.filter_by(episode_id=episode_id).first()
     return episode
 
-def save_conversation(conversation, episode_id, url):
-    podcast = Podcast(episode_id, conversation.get_conversation_id(), url)
+def save_conversation(episode_id, url, conversation=None, rev_job_id=None, podcast=None):
+    if not podcast:
+        podcast = Podcast(episode_id, url)
+    if conversation:
+        podcast.conversation_id = conversation.get_conversation_id()
+    if rev_job_id:
+        podcast.rev_job_id = rev_job_id
     db.session.add(podcast)
     db.session.commit()
 
@@ -61,29 +65,34 @@ def search():
     index = podcastindex.init(config)
     result = index.search(query)
     templ = """
+        <progress id="indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+        <div class="columns">
     {% for pod in podcasts %}
-    <div class="card block">
-        <div class="card-content">
-            <div class="media">
-                <div class="media-left">
-                    <figure class="image is-48x48">
-                        <img src="{{ pod.image }}"
-                    </figure>
+    <div class="column is-half">
+        <div class="card block">
+            <div class="card-content">
+                <div class="media">
+                    <div class="media-left">
+                        <figure class="image is-48x48">
+                            <img src="{{ pod.image }}"
+                        </figure>
+                    </div>
+                    <div class="media-content">
+                        <p class="title is-4">{{ pod.title }}</p>
+                        <p class="subtitle is-6"> {{ pod.author }}</p>
+                    </div>
                 </div>
-                <div class="media-content">
-                    <p class="title is-4">{{ pod.title }}</p>
-                    <p class="subtitle is-6"> {{ pod.author }}</p>
+                <div class="content">
+                    {{ pod.description }}
                 </div>
             </div>
-            <div class="content">
-                {{ pod.description }}
-            </div>
+            <footer class="card-footer">
+                <a class="card-footer-item" hx-indicator="#indicator" hx-get="/episodes/{{pod.id}}" hx-target="#search-results">Get episodes</a>
+            </footer>
         </div>
-        <footer class="card-footer">
-            <a class="card-footer-item" hx-indicator="#search-indicator" hx-get="/episodes/{{pod.id}}" hx-target="#episodes-div">Get episodes</a>
-        </footer>
     </div>
     {% endfor %}
+    </div>
     """
     podcasts = result['feeds']
     return render_template_string(templ, podcasts=podcasts)
@@ -95,50 +104,54 @@ def episodes(id):
     pprint.pprint(result['items'][0])
     url = result['items'][0]['enclosureUrl']
     templ = """
-    {% for episode in episodes %}
-    <div class="card block">
-        <div class="card-content">
-            <div class="media">
-                <div class="media-content">
-                    <p class="title is-4">{{ episode.title }}</p>
-                </div>
-            </div>
-        </div>
-        <footer class="card-footer">
-            <form hx-target="#final-div" hx-post="/analyze" hx-indicator="#final-indicator" class="card-footer-item">
-            <input hidden name="url" value="{{episode.enclosureUrl}}">
-            <input hidden name="episode_id" value="{{episode.id}}">
-            <input type="submit" value="Analyze" class="button is-white">
-            </form>
-        </footer>
-    </div>
-    {% endfor %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for episode in episodes %}
+            <tr>
+                <td>{{ episode.title }}</td>
+                <td>
+                    <form action="/episode" method="POST">
+                        <input hidden name="url" value="{{ episode.enclosureUrl }}">
+                        <input hidden name="episode_id" value="{{ episode.id }}">
+                        <input type="submit" value="Go to episode" class="button">
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
     """
     episodes = result['items']
     return render_template_string(templ, episodes=episodes)
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
+@app.route('/episode', methods=["POST"])
+def episode_detail():
+    episode_id = request.form.get("episode_id")
+    print(episode_id)
+    url = request.form.get("url")
+    print(url)
+    return render_template("episode.html", episode_id=episode_id, url=url)
+
+@app.route('/get-topics', methods=["POST"])
+def get_topics():
     templ = """
-    <div class="card block">
-        <header class="card-header">
-            <p class="card-header-title">
-              Podcast analysis complete
-            </p>
-        </header>
-        <div class="card-content">
-            <div class="content">
-            </div>
-        </div>
-        <footer class="card-footer">
-            <a href="/analysis?cid={{ conversation_id }}" class="card-footer-item">Go to full Analysis</a>
-        </footer>
-    </div>
+    <ul>
+    {% for topic in topics %}
+        <li>{{ topic.text }}</li>
+    {% endfor %}
+    </ul>
     """
     url = request.form['url']
     episode_id = request.form['episode_id']
+    print(url, episode_id)
     episode = read_db(episode_id)
-    if episode:
+    if episode and episode.conversation_id:
         conversation = symbl.Conversations.get_topics(conversation_id=episode.conversation_id, parameters={"sentiment": True})
         return render_template_string(templ, topics=conversation.topics, conversation_id=episode.conversation_id)
     r = requests.get(url)
@@ -149,26 +162,92 @@ def analyze():
     }
 
     conversation_object = symbl.Audio.process_url(payload=request_body)
-    save_conversation(conversation_object, episode_id, url)
+    save_conversation(episode_id, url, conversation=conversation_object, podcast=episode)
 
     cid=conversation_object.get_conversation_id()
-    return render_template_string(templ, conversation_id=cid)
+    return render_template_string(templ, topics=conversation_object.get_topics().topics)
 
-@app.route('/analysis', methods=['GET'])
-def analysis():
-    conversation_id = request.args.get('cid')
-    topics = symbl.Conversations.get_topics(conversation_id=conversation_id, parameters={"sentiment": True})
-    follow_ups = symbl.Conversations.get_follow_ups(conversation_id=conversation_id)
-    questions = symbl.Conversations.get_questions(conversation_id=conversation_id)
-    action_items = symbl.Conversations.get_action_items(conversation_id=conversation_id)
-    return render_template("analysis.html", topics=topics.topics, follow_ups=follow_ups.follow_ups, questions=questions.questions, action_items=action_items.action_items)
-
-def transcribe():
+@app.route('/get-action-items', methods=["POST"])
+def get_action_items():
+    templ = """
+    <ul>
+    {% if actions %}
+        {% for action in actions %}
+            <li>{{ action }}</li>
+        {% endfor %}
+    {% else %}
+        <li> No actions found</li>
+    {% endif %}
+    </ul>
+    """
     url = request.form['url']
-    url_job = client.submit_job_url(media_url=url)
-    print(url_job)
+    episode_id = request.form['episode_id']
+    episode = read_db(episode_id)
+    print(episode.conversation_id)
+    if episode and episode.conversation_id:
+        conversation = symbl.Conversations.get_action_items(conversation_id=episode.conversation_id) 
+        print(conversation)
+        return render_template_string(templ, actions=conversation.action_items, conversation_id=episode.conversation_id)
+    r = requests.get(url)
+    r_url = r.url
+    request_body = {
+            'url': r_url.strip(),
+            'name': f'Request',
+    }
 
+    conversation_object = symbl.Audio.process_url(payload=request_body)
+    save_conversation(episode_id, url, conversation=conversation_object, podcast=episode)
 
+    return render_template_string(templ, actions=conversation_object.get_action_items().action_items)
+
+@app.route('/get-follow-ups', methods=["POST"])
+def get_follow_ups():
+    templ = """
+    <ul>
+    {% for follow_up in follow_ups %}
+        <li>{{ follow_up.text }}</li>
+    {% endfor %}
+    </ul>
+    """
+    url = request.form['url']
+    episode_id = request.form['episode_id']
+    episode = read_db(episode_id)
+    if episode and episode.conversation_id:
+        conversation = symbl.Conversations.get_follow_ups(conversation_id=episode.conversation_id) 
+        return render_template_string(templ, follow_ups=conversation.follow_ups, conversation_id=episode.conversation_id)
+    r = requests.get(url)
+    r_url = r.url
+    request_body = {
+            'url': r_url.strip(),
+            'name': f'Request',
+    }
+
+    conversation_object = symbl.Audio.process_url(payload=request_body)
+    save_conversation(episode_id, url, conversation=conversation_object, podcast=episode)
+
+    return render_template_string(templ, follow_ups=conversation_object.get_follow_ups().follow_ups)
+
+@app.route('/get-transciption', methods=['POST'])
+def get_transcription():
+    templ = """
+    <p>
+    {{ transciption }}
+    </p>
+    """
+    url = request.form.get('url')
+    episode_id = request.form.get('episode_id')
+    episode = read_db(episode_id)
+    if episode and episode.rev_job_id:
+        job_details = client.get_job_details(episode.rev_job_id)
+        transcript_text = "Still working on it"
+        if job_details.status.name == "TRANSCRIBED":
+            transcript_text = client.get_transcript_text(episode.rev_job_id)
+        return render_template_string(templ, transciption=transcript_text)
+    job = client.submit_job_url(url)
+    save_conversation(episode_id, url, rev_job_id=job.id)
+    transcript_text =  "Testing"
+
+    return render_template_string(templ, transciption=transcript_text, podcast=episode)
 
 if __name__ == "__main__":
     db.create_all()
