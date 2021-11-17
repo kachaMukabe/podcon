@@ -27,12 +27,23 @@
 					Podcon
 				</a>
 			</div>
+			<div class="navbar-menu">
+				<div class="navbar-start">
+					<a href="/" class="navbar-item">
+						Home
+					</a>
+				</div>
+			</div>
 		</nav>
 		<div id="wrapper">
 		{% for message in get_flashed_messages() %}
 		    <div class="flash">{{ message }}</div>
 		{% endfor %}
+		<section class="section">
+			<div class="container is-max-desktop">
 		{% block content %}{% endblock %}
+			</div>
+		</section>
 		</div>
 		<footer class="footer">
 		  <div class="content has-text-centered">

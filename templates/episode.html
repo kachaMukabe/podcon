@@ -1,0 +1,91 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="columns">
+	<div class="column">
+		<div class="card block">
+		  <header class="card-header">
+		    <p class="card-header-title">
+		      Topics
+		    </p>
+		    <form class="mt-1 mr-1" hx-post="/get-topics" hx-target="#topic_div" hx-indicator="#topic_indicator">
+			<input hidden name="episode_id" value="{{ episode_id }}">
+			<input hidden name="url" value="{{ url }}">
+			    <button type="submit" class="button" aria-label="more options">
+			      <span class="">
+				      Analyze
+			      </span>
+			    </button>
+		    </form>
+		  </header>
+		  <div class="card-content">
+		    <div id="topic_div" class="content">
+			<progress id="topic_indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+		    </div>
+		  </div>
+		</div>
+		<div class="card block">
+		  <header class="card-header">
+		    <p class="card-header-title">
+		      Action Items
+		    </p>
+		    <form class="mt-1 mr-1" hx-post="/get-action-items" hx-target="#action_div" hx-indicator="#action_indicator">
+			<input hidden name="episode_id" value="{{ episode_id }}">
+			<input hidden name="url" value="{{ url }}">
+			    <button type="submit" class="button" aria-label="more options">
+			      <span class="">
+				      Analyze
+			      </span>
+			    </button>
+		    </form>
+		  </header>
+		  <div class="card-content">
+		    <div id="action_div" class="content">
+			<progress id="action_indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+		    </div>
+		  </div>
+		</div>
+		<div class="card block">
+		  <header class="card-header">
+		    <p class="card-header-title">
+		      Follow Ups
+		    </p>
+		    <form class="mt-1 mr-1" hx-post="/get-follow-ups" hx-target="#follow_div" hx-indicator="#follow_indicator">
+			<input hidden name="episode_id" value="{{ episode_id }}">
+			<input hidden name="url" value="{{ url }}">
+			    <button type="submit" class="button" aria-label="more options">
+			      <span class="">
+				      Analyze
+			      </span>
+			    </button>
+		    </form>
+		  </header>
+		  <div class="card-content">
+		    <div id="follow_div" class="content">
+			<progress id="follow_indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+		    </div>
+		  </div>
+		</div>
+		<div class="card block">
+		  <header class="card-header">
+		    <p class="card-header-title">
+		      Transcription
+		    </p>
+		    <form class="mt-1 mr-1" hx-post="/get-transciption" hx-target="#transcript_div" hx-indicator="#transcript_indicator">
+			<input hidden name="episode_id" value="{{ episode_id }}">
+			<input hidden name="url" value="{{ url }}">
+			    <button type="submit" class="button" aria-label="more options">
+			      <span class="">
+				      Analyze
+			      </span>
+			    </button>
+		    </form>
+		  </header>
+		  <div class="card-content">
+		    <div id="transcript_div" class="content">
+			<progress id="transcript_indicator" class="htmx-indicator progress is-large is-info" max="100">60%</progress>
+		    </div>
+		  </div>
+		</div>
+	</div>
+</div>
+{% endblock %}
