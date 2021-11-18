@@ -5,6 +5,7 @@ from rev_ai import apiclient
 from dotenv import load_dotenv
 
 import symbl
+import time
 import podcastindex
 import pprint
 import requests
@@ -245,7 +246,19 @@ def get_transcription():
         return render_template_string(templ, transciption=transcript_text)
     job = client.submit_job_url(url)
     save_conversation(episode_id, url, rev_job_id=job.id)
-    transcript_text =  "Testing"
+    status = job.status.name
+    transcript_text = "Buffering"
+    while True:
+        if status == "IN_PROGRESS":
+            time.sleep(5)
+            continue
+        elif status == "FAILED":
+            transcript_text =  "Failed to transcribe podcast"
+            break
+
+        if status == "TRANSCRIBED":
+            transcript_text = client.get_transcript_text(job.id)
+            break
 
     return render_template_string(templ, transciption=transcript_text, podcast=episode)
 
